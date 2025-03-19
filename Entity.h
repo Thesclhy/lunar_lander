@@ -76,6 +76,7 @@ public:
 
     void ai_slime_move(Entity* player);
     void regular_move(float rightBound, float leftBound);
+    bool const checkBound(float rightbound, float leftbound);
 
     void const power_up() { m_is_ascending = true; }
     void const fuel_using() { fuel_is_using = true; }

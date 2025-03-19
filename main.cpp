@@ -6,7 +6,7 @@
 #define PLATFORM_COUNT 12
 #define ENEMIES_COUNT 6
 #define FONTBANK_SIZE 16
-#define FUEL_AMOUNT 5000
+#define FUEL_AMOUNT 500
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -185,6 +185,8 @@ void draw_text(ShaderProgram* program, GLuint font_texture_id, std::string text,
     glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
 }
 
+
+
 void initialise()
 {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -255,7 +257,7 @@ void initialise()
         g_state.enemies[i].set_texture_id(enemy_texture_id);
         g_state.enemies[i].set_position(glm::vec3(2*i - 4.5f, -3.1f, 0.0f));
         g_state.enemies[i].set_width(0.5f);
-        g_state.enemies[i].set_height(0.5f);
+        g_state.enemies[i].set_height(0.35f);
         g_state.enemies[i].set_entity_type(ENEMY);
         g_state.enemies[i].set_scale(glm::vec3(0.5f, 0.5f, 0.5f));
         g_state.enemies[i].update(0.0f, NULL, NULL, 0);
@@ -375,6 +377,9 @@ void update()
     while (delta_time >= FIXED_TIMESTEP)
     {
         if (game_process == RUNNING) {
+            if (g_state.player->checkBound(4.8f, -4.8f)) {
+                game_process = LOSE;
+            }
             for (int i = 0; i < PLATFORM_COUNT; i++) {
                 if (g_state.player->check_collision(&g_state.platforms[i])) {
                     game_process = LOSE;

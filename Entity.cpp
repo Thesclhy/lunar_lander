@@ -76,6 +76,13 @@ bool const Entity::check_collision(Entity* other) const
     return x_distance < 0.0f && y_distance < 0.0f;
 }
 
+bool const Entity::checkBound(float rightbound, float leftbound) {
+    if (m_position.x > rightbound || m_position.x < leftbound) {
+        return true;
+    }
+    return false;
+}
+
 void Entity::update(float delta_time, Entity* enemies, Entity* collidable_entities, int collidable_entity_count)
 {
     //m_acceleration = glm::vec3(0.0f, 0.0f, 0.0f);
