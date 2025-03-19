@@ -220,8 +220,11 @@ void initialise()
  
     
     // ––––– PLATFORMS ––––– //
+    font_texture_id = load_texture(FONT_FILEPATH);
     GLuint platform_texture_id = load_texture(PLATFORM_FILEPATH);
     GLuint enemy_texture_id = load_texture(ENEMY_FILEPATH);
+    //FONT  
+    GLuint player_texture_id = load_texture(SPRITESHEET_FILEPATH);
     
     g_state.platforms = new Entity[PLATFORM_COUNT];
     g_state.enemies = new Entity[ENEMIES_COUNT];
@@ -262,12 +265,6 @@ void initialise()
         g_state.enemies[i].set_scale(glm::vec3(0.5f, 0.5f, 0.5f));
         g_state.enemies[i].update(0.0f, NULL, NULL, 0);
     }
-
-    //FONT
-    font_texture_id = load_texture(FONT_FILEPATH);
-
-
-    GLuint player_texture_id = load_texture(SPRITESHEET_FILEPATH);
 
     glm::vec3 acceleration = glm::vec3(0.0f,0.0f, 0.0f);
 
