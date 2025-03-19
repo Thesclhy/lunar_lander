@@ -3,10 +3,10 @@
 #define LOG(argument) std::cout << argument << '\n'
 #define GL_GLEXT_PROTOTYPES 1
 #define FIXED_TIMESTEP 0.0166666f
-#define PLATFORM_COUNT 10
-#define ENEMIES_COUNT 3
+#define PLATFORM_COUNT 12
+#define ENEMIES_COUNT 6
 #define FONTBANK_SIZE 16
-#define FUEL_AMOUNT 1000
+#define FUEL_AMOUNT 5000
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -55,7 +55,7 @@ const char V_SHADER_PATH[] = "shaders/vertex_textured.glsl",
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 const char SPRITESHEET_FILEPATH[] = "assets/fireball.png";
-const char PLATFORM_FILEPATH[]    = "assets/platformPack_tile027.png";
+const char PLATFORM_FILEPATH[]    = "assets/platform.png";
 const char ENEMY_FILEPATH[] = "assets/enemy.png";
 const char FONT_FILEPATH[] = "assets/font1.png";
 
@@ -225,7 +225,7 @@ void initialise()
     g_state.enemies = new Entity[ENEMIES_COUNT];
     
     // Set the type of every platform entity to PLATFORM
-    for (int i = 0; i < PLATFORM_COUNT; i++)
+    for (int i = 0; i < PLATFORM_COUNT-2; i++)
     {
         g_state.platforms[i].set_texture_id(platform_texture_id);
         g_state.platforms[i].set_position(glm::vec3(i - 4.5f, -3.8f, 0.0f));
@@ -234,57 +234,55 @@ void initialise()
         g_state.platforms[i].set_entity_type(PLATFORM);
         g_state.platforms[i].update(0.0f, NULL, NULL, 0);        
     }
+
+    g_state.platforms[PLATFORM_COUNT - 1].set_texture_id(platform_texture_id);
+    g_state.platforms[PLATFORM_COUNT - 1].set_position(glm::vec3(rand()%3, -1.8f, 0.0f));
+    g_state.platforms[PLATFORM_COUNT - 1].set_width(1.0f);
+    g_state.platforms[PLATFORM_COUNT - 1].set_height(1.0f);
+    g_state.platforms[PLATFORM_COUNT - 1].set_entity_type(PLATFORM);
+    g_state.platforms[PLATFORM_COUNT - 1].update(0.0f, NULL, NULL, 0);
+
+    g_state.platforms[PLATFORM_COUNT - 2].set_texture_id(platform_texture_id);
+    g_state.platforms[PLATFORM_COUNT - 2].set_position(glm::vec3(-rand() % 3, 1.8f, 0.0f));
+    g_state.platforms[PLATFORM_COUNT - 2].set_width(1.0f);
+    g_state.platforms[PLATFORM_COUNT - 2].set_height(1.0f);
+    g_state.platforms[PLATFORM_COUNT - 2].set_entity_type(PLATFORM);
+    g_state.platforms[PLATFORM_COUNT - 2].update(0.0f, NULL, NULL, 0);
     
     // Set the enemies
     for (int i = 0; i < ENEMIES_COUNT; i++)
     {
         g_state.enemies[i].set_texture_id(enemy_texture_id);
-        g_state.enemies[i].set_position(glm::vec3(2*i - 4.5f, -2.8f, 0.0f));
-        g_state.enemies[i].set_width(1.0f);
-        g_state.enemies[i].set_height(1.0f);
+        g_state.enemies[i].set_position(glm::vec3(2*i - 4.5f, -3.1f, 0.0f));
+        g_state.enemies[i].set_width(0.5f);
+        g_state.enemies[i].set_height(0.5f);
         g_state.enemies[i].set_entity_type(ENEMY);
+        g_state.enemies[i].set_scale(glm::vec3(0.5f, 0.5f, 0.5f));
         g_state.enemies[i].update(0.0f, NULL, NULL, 0);
     }
 
     //FONT
     font_texture_id = load_texture(FONT_FILEPATH);
 
-    
-    // ––––– PLAYER (GEORGE) ––––– //
-    // Existing
+
     GLuint player_texture_id = load_texture(SPRITESHEET_FILEPATH);
 
-    int player_walking_animation[4][4] =
-    {
-        { 1, 5, 9, 13 },  // for George to move to the left,
-        { 3, 7, 11, 15 }, // for George to move to the right,
-        { 2, 6, 10, 14 }, // for George to move upwards,
-        { 0, 4, 8, 12 }   // for George to move downwards
-    };
-
-    glm::vec3 acceleration = glm::vec3(0.0f,-1.0f, 0.0f);
+    glm::vec3 acceleration = glm::vec3(0.0f,0.0f, 0.0f);
 
     g_state.player = new Entity(
         player_texture_id,         // texture id
         5.0f,                      // speed
         acceleration,              // acceleration
-        3.0f,                      // jumping power
-        player_walking_animation,  // animation index sets
-        0.0f,                      // animation time
-        4,                         // animation frame amount
-        0,                         // current animation index
-        4,                         // animation column amount
-        4,                         // animation row amount
-        1.0f,                      // width
-        1.0f,                       // height
+        0.4f,                      // fuel power
+        0.5f,                      // width
+        0.5f,                       // height
         PLAYER
     );
 
 
-    // Jumping
-    g_state.player->set_asc_power(0.20f);
-
-    //fuel
+    //g_state.player->set_asc_power(0.20f);
+    g_state.player->set_scale(glm::vec3(0.5f, 0.5f, 0.5f));
+    g_state.player->set_position(glm::vec3(0.0f, 3.6f, 0.0f));
     g_state.player->set_fuel(FUEL_AMOUNT);
     
     // ––––– GENERAL ––––– //
@@ -294,7 +292,7 @@ void initialise()
 
 void process_input()
 {
-    g_state.player->set_movement(glm::vec3(0.0f));
+    g_state.player->set_acceleration(glm::vec3(0.0f));
     
     SDL_Event event;
     while (SDL_PollEvent(&event))
@@ -328,14 +326,14 @@ void process_input()
     {
         if (g_state.player->get_fuel() > 0) {
             g_state.player->fuel_using();
-            g_state.player->move_left();
+            g_state.player->accelerate_left();
         }
     }
     else if (key_state[SDL_SCANCODE_RIGHT])
     {
         if (g_state.player->get_fuel() > 0) {
             g_state.player->fuel_using();
-            g_state.player->move_right();
+            g_state.player->accelerate_right();
         }
     }
     
@@ -348,8 +346,15 @@ void process_input()
         if (g_state.player->get_fuel() > 0) {
             g_state.player->fuel_using();
             g_state.player->power_up();
-            g_state.player->move_up();
+            g_state.player->accelerate_up();
         }    
+    }
+    else if (key_state[SDL_SCANCODE_DOWN])
+    {
+        if (g_state.player->get_fuel() > 0) {
+            g_state.player->fuel_using();
+            g_state.player->accelerate_down();
+        }
     }
 }
 
@@ -365,25 +370,31 @@ void update()
     {
         g_accumulator = delta_time;
         return;
-    }
-    
-    if (game_process == RUNNING) {
-        for (int i = 0; i < PLATFORM_COUNT; i++) {
-            if (g_state.player->check_collision(&g_state.platforms[i])) {
-                game_process = LOSE;
-            }
-        }
-
-        for (int i = 0; i < ENEMIES_COUNT; i++) {
-            if (g_state.player->check_collision(&g_state.enemies[i])) {
-                game_process = WIN;
-            }
-        }
-    }
+    }   
 
     while (delta_time >= FIXED_TIMESTEP)
     {
-        g_state.player->update(FIXED_TIMESTEP, NULL, g_state.platforms, PLATFORM_COUNT);
+        if (game_process == RUNNING) {
+            for (int i = 0; i < PLATFORM_COUNT; i++) {
+                if (g_state.player->check_collision(&g_state.platforms[i])) {
+                    game_process = LOSE;
+                }
+            }
+
+            for (int i = 0; i < ENEMIES_COUNT; i++) {
+                g_state.enemies[i].ai_slime_move(g_state.player);
+                g_state.enemies[i].update(FIXED_TIMESTEP);
+                if (g_state.player->check_collision(&g_state.enemies[i])) {
+                    game_process = WIN;
+                }
+            }
+            g_state.platforms[PLATFORM_COUNT - 1].regular_move(2.0f,-2.0f);
+            g_state.platforms[PLATFORM_COUNT - 2].regular_move(2.0f, -2.0f);
+            g_state.platforms[PLATFORM_COUNT - 1].update(FIXED_TIMESTEP);
+            g_state.platforms[PLATFORM_COUNT - 2].update(FIXED_TIMESTEP);
+
+        }
+        g_state.player->update(FIXED_TIMESTEP, g_state.enemies, g_state.platforms, PLATFORM_COUNT);
         delta_time -= FIXED_TIMESTEP;
     }
     

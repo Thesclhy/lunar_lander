@@ -15,21 +15,16 @@
 
 // Default constructor
 Entity::Entity()
-    : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
+    : m_position(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
     m_speed(0.0f), m_animation_cols(0), m_animation_frames(0), m_animation_index(0),
     m_animation_rows(0), m_animation_indices(nullptr), m_animation_time(0.0f),
     m_texture_id(0), m_velocity(0.0f), m_acceleration(0.0f), m_width(0.0f), m_height(0.0f)
 {}
 
 // Parameterized constructor
-Entity::Entity(GLuint texture_id, float speed, glm::vec3 acceleration, float jump_power, int walking[4][4], float animation_time,
-    int animation_frames, int animation_index, int animation_cols,
-    int animation_rows, float width, float height, EntityType EntityType)
-    : m_position(0.0f), m_movement(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
-    m_speed(speed),m_acceleration(acceleration), m_asc_power(jump_power), m_animation_cols(animation_cols),
-    m_animation_frames(animation_frames), m_animation_index(animation_index),
-    m_animation_rows(animation_rows), m_animation_indices(nullptr),
-    m_animation_time(animation_time), m_texture_id(texture_id), m_velocity(0.0f),
+Entity::Entity(GLuint texture_id, float speed, glm::vec3 acceleration, float fuel_power, float width, float height, EntityType EntityType)
+    : m_position(0.0f), m_scale(1.0f, 1.0f, 0.0f), m_model_matrix(1.0f),
+    m_speed(speed),m_acceleration(acceleration), m_asc_power(fuel_power),m_texture_id(texture_id), m_velocity(0.0f),
     m_width(width), m_height(height), m_entity_type(EntityType)
 {}
 
@@ -81,106 +76,17 @@ bool const Entity::check_collision(Entity* other) const
     return x_distance < 0.0f && y_distance < 0.0f;
 }
 
-void const Entity::check_collision_y(Entity *collidable_entities, int collidable_entity_count)
+void Entity::update(float delta_time, Entity* enemies, Entity* collidable_entities, int collidable_entity_count)
 {
-    for (int i = 0; i < collidable_entity_count; i++)
-    {
-        Entity *collidable_entity = &collidable_entities[i];
-        
-        if (check_collision(collidable_entity))
-        {
-            float y_distance = fabs(m_position.y - collidable_entity->m_position.y);
-            float y_overlap = fabs(y_distance - (m_height / 2.0f) - (collidable_entity->m_height / 2.0f));
-            if (m_velocity.y > 0)
-            {
-                m_position.y -= y_overlap;
-                m_velocity.y = 0;
-
-                // Collision!
-                m_collided_top = true;
-            }
-            else if (m_velocity.y < 0)
-            {
-                m_position.y += y_overlap;
-                m_velocity.y = 0;
-
-                // Collision!
-                m_collided_bottom = true;
-            }
-                   
-        }
-    }
-}
-
-void const Entity::check_collision_x(Entity *collidable_entities, int collidable_entity_count)
-{
-    for (int i = 0; i < collidable_entity_count; i++)
-    {
-        Entity *collidable_entity = &collidable_entities[i];
-        
-        if (check_collision(collidable_entity))
-        {
-            float x_distance = fabs(m_position.x - collidable_entity->m_position.x);
-            float x_overlap = fabs(x_distance - (m_width / 2.0f) - (collidable_entity->m_width / 2.0f));
-            if (m_velocity.x > 0)
-            {
-                m_position.x -= x_overlap;
-                m_velocity.x = 0;
-
-                // Collision!
-                m_collided_right = true;
-
-            }
-            else if (m_velocity.x < 0)
-            {
-                m_position.x += x_overlap;
-                m_velocity.x = 0;
-
-                // Collision!
-                m_collided_left = true;
-            }
-            
-        }
-    }
-}
-void Entity::update(float delta_time, Entity *player, Entity *collidable_entities, int collidable_entity_count)
-{
-    if (!m_is_active) return;
- 
-    m_collided_top    = false;
+    //m_acceleration = glm::vec3(0.0f, 0.0f, 0.0f);
+    m_collided_top = false;
     m_collided_bottom = false;
-    m_collided_left   = false;
-    m_collided_right  = false;
-    
-    if (m_animation_indices != NULL)
-    {
-        if (glm::length(m_movement) != 0)
-        {
-            m_animation_time += delta_time;
-            float frames_per_second = (float) 1 / SECONDS_PER_FRAME;
-            
-            if (m_animation_time >= frames_per_second)
-            {
-                m_animation_time = 0.0f;
-                m_animation_index++;
-                
-                if (m_animation_index >= m_animation_frames)
-                {
-                    m_animation_index = 0;
-                }
-            }
-        }
-    }
-    
+    m_collided_left = false;
+    m_collided_right = false;
 
-    //m_velocity.x = m_movement.x * m_speed;
-    m_velocity += m_acceleration * delta_time;
-    
-    m_position.y += m_velocity.y * delta_time;
-    //check_collision_y(collidable_entities, collidable_entity_count);
-    
+    m_velocity += m_acceleration * delta_time;  
+    m_position.y += m_velocity.y * delta_time; 
     m_position.x += m_velocity.x * delta_time;
-    //check_collision_x(collidable_entities, collidable_entity_count);
 
     if (fuel_is_using) {
         set_fuel(--fuel);
@@ -197,6 +103,38 @@ void Entity::update(float delta_time, Entity *player, Entity *collidable_entitie
     
     m_model_matrix = glm::mat4(1.0f);
     m_model_matrix = glm::translate(m_model_matrix, m_position);
+    m_model_matrix = glm::scale(m_model_matrix, m_scale);
+}
+
+void Entity::update(float delta_time) {
+    m_position.x += m_velocity.x * delta_time;
+    m_model_matrix = glm::mat4(1.0f);
+    m_model_matrix = glm::translate(m_model_matrix, m_position);
+    m_model_matrix = glm::scale(m_model_matrix, m_scale);
+}
+
+void Entity::ai_slime_move(Entity* player)
+{
+    if (player->get_position().x > m_position.x) {
+        move_left();
+    }
+    else if (player->get_position().x < m_position.x){
+        move_right();
+    }
+}
+
+void Entity::regular_move(float rightBound, float leftBound) {
+    if (m_position.x > rightBound || m_position.x < leftBound) {
+        isMoveRight = !isMoveRight;
+    }
+    if (isMoveRight)
+    {
+        move_right();
+    }
+    else {
+        move_left();
+    }
+   
 }
 
 
